@@ -3,7 +3,7 @@ module.exports = {
     "vuetify"
   ],
   publicPath: process.env.NODE_ENV === 'production'
-      ? '/'
-      : '/random-topics/',
+      ? '/random-topics/'
+      : '/',
   outputDir: 'dist'
 }
