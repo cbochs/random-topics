@@ -21,10 +21,37 @@
             label="Session code"
             class="mr-2"
           ></v-text-field>
-          <v-btn
-            color="error"
-            @click="closeSession"
-          >Close Session</v-btn>
+          <v-dialog
+            v-model="close_dialog"
+            max-width="290"
+          >
+            <template v-slot:activator="{ on, attrs }">
+                <v-btn
+                  color="error"
+                  v-bind="attrs"
+                  v-on="on"
+                >Close Session</v-btn>
+            </template>
+            <v-card>
+              <v-card-title>
+                Close session {{ session_code }}?
+              </v-card-title>
+              <v-card-text>Are you sure you want to close this session? Closing will shuffle + assign topics to users who have submitted, preventing any further topic submissions.</v-card-text>
+              <v-card-actions>
+                <v-spacer></v-spacer>
+                <v-btn
+                  color="green darken-1"
+                  text
+                  @click="close_dialog = false"
+                >Keep open</v-btn>
+                <v-btn
+                  color="red darken-1"
+                  text
+                  @click="closeSession"
+                >Close session</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
         </v-container>
         <v-container class="d-flex">
           <v-text-field
@@ -86,6 +113,7 @@ export default {
     topic: '',
     output: '',
     timeout: null,
+    close_dialog: false,
   }),
 
   computed: {
@@ -117,6 +145,8 @@ export default {
         .catch(err => console.log(err))
     },
     closeSession: async function() {
+      this.close_dialog = false
+
       if (this.session_code.length < 4) return
 
       await closeSession(this.session_code)
@@ -143,9 +173,13 @@ export default {
 
       await submitTopic(this.session_code, this.topic)
         .then(resp => {
-          this.topic = ''
-          this.topic_code = resp.data.data.code
-          this.output = `Topic Code: ${this.topic_code}`
+          if (!resp.data.data.ok) {
+            this.output = `Could not submit topic. ${resp.data.data.reason}`
+          } else {
+            this.topic = ''
+            this.topic_code = resp.data.data.code
+            this.output = `Topic Code: ${this.topic_code}`
+          }
         })
         .catch(err => console.log(err))
     },
@@ -155,11 +189,11 @@ export default {
 
       await updateTopic(this.topic_code, this.topic)
         .then(resp => {
-          this.topic = ''
-          this.topic_code = resp.data.data.code
           if (!resp.data.data.ok) {
             this.output = resp.data.data.reason
           } else {
+            this.topic = ''
+            this.topic_code = resp.data.data.code
             this.output = `Topic Updated: ${this.topic_code}`
           }
         })
