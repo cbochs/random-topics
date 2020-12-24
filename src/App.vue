@@ -16,7 +16,7 @@
         <v-container class="d-flex">
           <v-text-field
             dense
-            v-model="session_code_input"
+            v-model="session_code_model"
             :maxlength="max_id_length"
             label="Session code"
             class="mr-2"
@@ -36,13 +36,13 @@
           ></v-text-field>
           <v-btn
             color="primary"
-            @click="submitTopic"
-          >Submit Topic</v-btn>
+            @click="submitOrUpdateTopic"
+          >{{ submit_topic_btn }}</v-btn>
         </v-container>
         <v-container class="d-flex">
           <v-text-field
             dense
-            v-model="topic_code"
+            v-model="topic_code_model"
             :maxlength="max_id_length"
             label="Topic code"
             class="mr-2"
@@ -69,6 +69,7 @@ import {
   closeSession,
   // getSession,
   submitTopic,
+  updateTopic,
   getAssignedTopic,
 } from './api'
 
@@ -88,15 +89,19 @@ export default {
   }),
 
   computed: {
-    session_code_input: {
-      get() { return this.session_code },
-      set(id) {
-        this.session_code = id.toUpperCase()
-
-        if (this.timeout) clearTimeout(this.timeout)
-        this.timeout = setTimeout(() => {
-          console.log('stopped typing')
-        }, 500)
+    session_code_model: {
+      get: function() { return this.session_code },
+      set: function(code) { this.session_code = code.toUpperCase() }
+    },
+    topic_code_model: {
+      get: function() { return this.topic_code },
+      set: function(code) { this.topic_code = code.toUpperCase() }
+    },
+    submit_topic_btn: function() {
+      if (this.topic_code.length > 0) {
+        return 'Update Topic'
+      } else {
+        return 'Submit Topic'
       }
     }
   },
@@ -105,6 +110,7 @@ export default {
     openSession: async function() {
       await openSession()
         .then(resp => {
+          this.topic_code = ''
           this.session_code = resp.data.data.code
           this.output = `Session Code: ${this.session_code}`
         })
@@ -115,14 +121,21 @@ export default {
 
       await closeSession(this.session_code)
         .then(resp => {
-          this.session_code = ''
           if (!resp.data.data.ok) {
             this.output = `Closed. ${resp.data.data.reason}`
           } else {
             this.output = `Closed Session: ${this.session_code}`
           }
+          this.session_code = ''
         })
         .catch(err => console.log(err))
+    },
+    submitOrUpdateTopic: function() {
+      if (this.topic_code.length > 0) {
+        this.updateTopic()
+      } else {
+        this.submitTopic()
+      }
     },
     submitTopic: async function() {
       if (this.session_code.length < 4) return
@@ -133,6 +146,22 @@ export default {
           this.topic = ''
           this.topic_code = resp.data.data.code
           this.output = `Topic Code: ${this.topic_code}`
+        })
+        .catch(err => console.log(err))
+    },
+    updateTopic: async function() {
+      if (this.topic_code.length < 4) return
+      if (this.topic.length == 0) return
+
+      await updateTopic(this.topic_code, this.topic)
+        .then(resp => {
+          this.topic = ''
+          this.topic_code = resp.data.data.code
+          if (!resp.data.data.ok) {
+            this.output = resp.data.data.reason
+          } else {
+            this.output = `Topic Updated: ${this.topic_code}`
+          }
         })
         .catch(err => console.log(err))
     },

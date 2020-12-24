@@ -20,6 +20,10 @@ export const submitTopic = async (sessionCode, topic) => {
   return axios.post('/topics', { code: sessionCode, topic })
 }
 
+export const updateTopic = async (topicCode, topic) => {
+  return axios.put(`/topics/${topicCode}`, { topic })
+}
+
 export const getAssignedTopic = async (topicCode) => {
   return axios.get(`/topics/${topicCode}/assigned`)
 }
