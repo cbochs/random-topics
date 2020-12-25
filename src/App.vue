@@ -1,7 +1,9 @@
 <template>
   <v-app>
     <v-container>
-      <v-card>
+      <v-card
+        :loading="loading"
+      >
         <v-card-title>
           <h1 class="display-1">Random Topics</h1>
           <v-spacer></v-spacer>
@@ -11,6 +13,7 @@
             color="primary"
             class="mr-2"
             @click="openSession"
+            :disabled="loading"
           >Create Session</v-btn>
         </v-container>
         <v-container class="d-flex">
@@ -30,6 +33,7 @@
                   color="error"
                   v-bind="attrs"
                   v-on="on"
+                  :disabled="loading"
                 >Close Session</v-btn>
             </template>
             <v-card>
@@ -64,6 +68,7 @@
           <v-btn
             color="primary"
             @click="submitOrUpdateTopic"
+            :disabled="loading"
           >{{ submit_topic_btn }}</v-btn>
         </v-container>
         <v-container class="d-flex">
@@ -77,6 +82,7 @@
           <v-btn
             color="primary"
             @click="getAssignedTopic"
+            :disabled="loading"
           >My Topic</v-btn>
         </v-container>
       </v-card>
@@ -114,6 +120,7 @@ export default {
     output: '',
     timeout: null,
     close_dialog: false,
+    loading: false,
   }),
 
   computed: {
@@ -131,24 +138,30 @@ export default {
       } else {
         return 'Submit Topic'
       }
-    }
+    },
   },
 
   methods: {
     openSession: async function() {
+      this.loading = true
       await openSession()
         .then(resp => {
           this.topic_code = ''
           this.session_code = resp.data.data.code
           this.output = `Session Code: ${this.session_code}`
         })
-        .catch(err => console.log(err))
+        .catch(err => {
+          this.output = 'Unable to open session.'
+          console.log(err)
+        })
+      this.loading = false
     },
     closeSession: async function() {
       this.close_dialog = false
 
       if (this.session_code.length < 4) return
 
+      this.loading = true
       await closeSession(this.session_code)
         .then(resp => {
           if (!resp.data.data.ok) {
@@ -158,7 +171,11 @@ export default {
           }
           this.session_code = ''
         })
-        .catch(err => console.log(err))
+        .catch(err => {
+          this.output = 'Unable to close session.'
+          console.log(err)
+        })
+      this.loading = false
     },
     submitOrUpdateTopic: function() {
       if (this.topic_code.length > 0) {
@@ -171,6 +188,7 @@ export default {
       if (this.session_code.length < 4) return
       if (this.topic.length == 0) return
 
+      this.loading = true
       await submitTopic(this.session_code, this.topic)
         .then(resp => {
           if (!resp.data.data.ok) {
@@ -181,12 +199,17 @@ export default {
             this.output = `Topic Code: ${this.topic_code}`
           }
         })
-        .catch(err => console.log(err))
+        .catch(err => {
+          this.output = 'Unable to submit topic.'
+          console.log(err)
+        })
+      this.loading = false
     },
     updateTopic: async function() {
       if (this.topic_code.length < 4) return
       if (this.topic.length == 0) return
 
+      this.loading = true
       await updateTopic(this.topic_code, this.topic)
         .then(resp => {
           if (!resp.data.data.ok) {
@@ -197,11 +220,16 @@ export default {
             this.output = `Topic Updated: ${this.topic_code}`
           }
         })
-        .catch(err => console.log(err))
+        .catch(err => {
+          this.output = 'Unable to update topic.'
+          console.log(err)
+        })
+      this.loading = false
     },
     getAssignedTopic: async function() {
       if (this.topic_code < 4) return
 
+      this.loading = true
       await getAssignedTopic(this.topic_code)
         .then(resp => {
           if (!resp.data.data.ok) {
@@ -210,7 +238,11 @@ export default {
             this.output = `Topic: ${resp.data.data.topic}`
           }
         })
-        .catch(err => console.log(err))
+        .catch(err => {
+          this.output = 'Unable to get assigned topic.'
+          console.log(err)
+        })
+      this.loading = false
     },
   },
 

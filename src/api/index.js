@@ -2,6 +2,7 @@ import axios from 'axios'
 import config from '../config'
 
 axios.defaults.baseURL = config.apiURL
+axios.defaults.timeout = config.apiTimeout
 axios.defaults.withCredentials = false
 
 export const openSession = async () => {
